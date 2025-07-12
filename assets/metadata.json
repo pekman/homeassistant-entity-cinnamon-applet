@@ -1,0 +1,6 @@
+{
+    "uuid": "homeassistant-entity-cinnamon-applet@pekman.github.io",
+    "name": "Home Assistant entity Cinnamon applet",
+    "description": "Control Home Assistant entity by clicking or scrolling applet icon",
+    "max-instances": -1
+}

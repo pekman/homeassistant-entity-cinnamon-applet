@@ -1,0 +1,17 @@
+{
+    "hassUrl": {
+        "type": "entry",
+        "default": "https://your-homeassistant-url.example:8123",
+        "description": "Home Assistant address"
+    },
+    "hassAccessToken": {
+        "type": "entry",
+        "default": "",
+        "description": "Home Assistant access token"
+    },
+    "entity": {
+        "type": "entry",
+        "default": "",
+        "description": "Entity to control. Only 'light' entity type supported."
+    }
+}

@@ -1,0 +1,27 @@
+// based on https://github.com/linuxmint/cinnamon-spices-applets/tree/master/.typescript-declarations
+{
+    "compilerOptions": {
+        "lib": [
+            "ES2017",                // ES2017 is supported starting from Cinnamon 3.8
+            "WebWorker",             // for WebSocket
+        ],
+        "target": "es2017",          // Again, Cinnamon 3.8+ supports ES2017, no need to transpile further down.
+        "noImplicitAny": true,       // Optional, just forces you to declare types.
+        "removeComments": true,      // Optional
+        "preserveConstEnums": false, // Const enums will be substituted to its values in transpiled code, in some cases nurmal enums doesn't work properly in GJS
+        "noImplicitThis": true,      // This warns you for callbacks using this which might be not bound to the correct context.
+
+        "module": "ES2015",
+        "strict": true,
+        "noFallthroughCasesInSwitch": true,
+        "exactOptionalPropertyTypes": true,
+        "noImplicitOverride": true,
+        "noImplicitReturns": true,
+        "experimentalDecorators": true,
+        "moduleResolution": "Bundler",
+        "resolveJsonModule": true,
+        "types": [
+            "@ci-types/cjs"
+        ],
+    }
+}
