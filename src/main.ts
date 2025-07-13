@@ -1,5 +1,5 @@
 import { uuid } from "../assets/metadata.json";
-import { connectToHass, EntityWatcher } from "./connection";
+import { connectToHass, EntityWatcher, type State } from "./connection";
 import * as log from "./log";
 
 const { IconApplet } = imports.ui.applet;
@@ -68,6 +68,7 @@ class HAEntityApplet extends IconApplet {
             return;
         }
 
+        entityWatcher.onUpdate = this._onEntityUpdate.bind(this);
         this._entityWatcher = entityWatcher;
 
         this.set_applet_tooltip(this._("Connected"));
@@ -81,6 +82,15 @@ class HAEntityApplet extends IconApplet {
         }
     }
 
+    private _onEntityUpdate(state: State) {
+        const msg =
+            state.state === "on" ? this._("On") :
+            state.state === "off" ? this._("Off") :
+            state.state === "unavailable" ? this._("Unavailable")
+            : state.state;
+        this.set_applet_tooltip(msg);
+    }
+
     override on_applet_added_to_panel() {
         this._reload();
     }
@@ -90,6 +100,7 @@ class HAEntityApplet extends IconApplet {
     }
 
     override on_applet_clicked(): boolean {
+        this._entityWatcher?.clickAction();
         return true;
     }
 }

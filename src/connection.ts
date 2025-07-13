@@ -7,17 +7,41 @@ import {
 } from "home-assistant-js-websocket";
 import * as log from "./log";
 import "./websocket-shim";
+import { createServiceCall } from "./entity-types";
 
-interface State {
+export interface State {
     entity_id: string;
     state: string;
     attributes: { [attr: string]: unknown };
 }
 
-export class EntityWatcher {
-    private _collection: Collection<State | null>;
+interface HassEvent {
+    variables?: {
+        trigger?: {
+            to_state?: State;
+        };
+    };
+}
 
-    constructor(private _conn: Connection, entity_id: string) {
+export class EntityWatcher {
+    onUpdate?: (state: State) => void;
+
+    get state() {
+        return this._collection.state;
+    }
+
+    private readonly _entityDomain: string;
+    private _collection: Collection<State>;
+
+    constructor(
+        private _conn: Connection,
+        public readonly entity_id: string,
+    ) {
+        const domain = /^(\w+)\./.exec(this.entity_id)?.[1];
+        if (!domain)
+            throw new Error("Invalid entity ID");
+        this._entityDomain = domain;
+
         this._collection = getCollection(
             _conn,
             "_entityState",
@@ -39,12 +63,12 @@ export class EntityWatcher {
                 return null;
             },
             (conn, store) => conn.subscribeMessage(
-                store.action((event): object | null => {
-                    log.log("event" + JSON.stringify(event));
+                store.action((_state: unknown, event: HassEvent | null) => {
+                    log.log("event: " + JSON.stringify(event));
                     if (event == null) {
                         return null;  // no change
                     }
-                    const trigger: unknown = event?.variables?.trigger;
+                    const trigger = event.variables?.trigger;
                     if (typeof trigger !== "object" || !trigger ||
                         !("entity_id" in trigger) ||
                         trigger.entity_id !== entity_id ||
@@ -64,11 +88,22 @@ export class EntityWatcher {
                 }),
         );
 
-        this._collection.subscribe((state) => log.log(JSON.stringify(state)));
+        this._collection.subscribe((state) => {
+            log.log(JSON.stringify(state))
+            this.onUpdate?.(state);
+        });
     }
 
     close() {
         this._conn.close();
+    }
+
+    clickAction() {
+        const msg = createServiceCall("click", this.entity_id);
+        if (msg) {
+            log.log("Sending message: " + JSON.stringify(msg));
+            this._conn.sendMessage(msg);
+        }
     }
 }
 
