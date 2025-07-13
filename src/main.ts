@@ -8,7 +8,7 @@ const { AppletSettings } = imports.ui.settings;
 
 class HAEntityApplet extends IconApplet {
     private _settings: imports.ui.settings.AppletSettings;
-    private _connection?: EntityWatcher | null;
+    private _entityWatcher?: EntityWatcher | null;
 
     constructor(
         orientation: imports.gi.St.Side,
@@ -24,8 +24,6 @@ class HAEntityApplet extends IconApplet {
     }
 
     private async _reload() {
-        // TODO: what if called when connection is being established
-
         this.set_applet_tooltip(this._("Connecting…"));
         this._closeConnection();
 
@@ -49,8 +47,9 @@ class HAEntityApplet extends IconApplet {
             return;
         }
 
+        let entityWatcher;
         try {
-            this._connection = await connectToHass(
+            entityWatcher = await connectToHass(
                 hassUrl,
                 accessToken,
                 entity,
@@ -60,14 +59,25 @@ class HAEntityApplet extends IconApplet {
             return;
         }
 
+        if (this._entityWatcher) {
+            // If we had multiple connection attempts executing
+            // simultaneously, and one of them has already connected,
+            // throw away this connection. (This can easily happen
+            // when configuration is being changed.)
+            entityWatcher.close();
+            return;
+        }
+
+        this._entityWatcher = entityWatcher;
+
         this.set_applet_tooltip(this._("Connected"));
     }
 
     private _closeConnection() {
-        if (this._connection) {
+        if (this._entityWatcher) {
             log.log("Closing Home Assistant connection");
-            this._connection.close();
-            this._connection = null;
+            this._entityWatcher.close();
+            this._entityWatcher = null;
         }
     }
 
