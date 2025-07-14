@@ -7,7 +7,10 @@ import {
 } from "home-assistant-js-websocket";
 import * as log from "./log";
 import "./websocket-shim";
-import { createServiceCall } from "./entity-types";
+import { EntityDomainInfo, getServiceCallInfo } from "./entity-domains";
+import { RateLimiter } from "./rate-limiter";
+
+const CALL_TIMEOUT_ms = 250;
 
 export interface State {
     entity_id: string;
@@ -30,12 +33,25 @@ export class EntityWatcher {
         return this._collection.state;
     }
 
+    private readonly _entityDomain: string;
     private _collection: Collection<State>;
+    private readonly _expectedAttrValues = new Map<string, number>();
+
+    private _callRateLimiter = new RateLimiter(
+        this._conn,
+        this._conn.sendMessagePromise,
+        CALL_TIMEOUT_ms,
+    );
 
     constructor(
-        private _conn: Connection,
+        private readonly _conn: Connection,
         public readonly entity_id: string,
     ) {
+        const domain = /^(\w+)\./.exec(this.entity_id)?.[1];
+        if (!domain)
+            throw new Error("Invalid entity ID");
+        this._entityDomain = domain;
+
         this._collection = getCollection(
             _conn,
             "_entityState",
@@ -81,6 +97,10 @@ export class EntityWatcher {
         );
 
         this._collection.subscribe((state) => {
+            for (const [attr, val] of [...this._expectedAttrValues]) {
+                if (state.attributes[attr] === val)
+                    this._expectedAttrValues.delete(attr);
+            }
             this.onUpdate?.(state);
         });
     }
@@ -90,28 +110,51 @@ export class EntityWatcher {
     }
 
     clickAction() {
-        this._callServiceMaybe("click");
+        this._action("click");
     }
 
     scrollAction(delta: number) {
-        this._callServiceMaybe("adjust", { delta });
+        this._action("adjust", delta);
     }
 
-    private async _callServiceMaybe(
-        action: Parameters<typeof createServiceCall>[0],
-        values?: Parameters<typeof createServiceCall>[2],
-    ) {
-        const msg = createServiceCall(action, this.entity_id, values);
-        if (msg) {
-            // log.log("Sending message: " + JSON.stringify(msg));
-            this._conn.sendMessage(msg);
-            // try {
-            //     const response = await this._conn.sendMessagePromise(msg);
-            //     log.log("Service call response:" + JSON.stringify(response));
-            // } catch (err) {
-            //     log.error("Service call returned error: " + JSON.stringify(err));
-            // }
+    private _adjustAttributeValue(
+        attrName: string,
+        delta: number,
+        lowerLimit: number,
+        upperLimit: number,
+        defaultIfUnset: number,
+    ): number {
+        const attrs = this.state.attributes;
+        const curVal = attrs && typeof attrs[attrName] === "number"
+            ? this._expectedAttrValues.get(attrName) ?? attrs[attrName]
+            : defaultIfUnset;
+        const newVal = curVal + delta;
+        const clamped = Math.min(upperLimit, Math.max(lowerLimit, newVal));
+        this._expectedAttrValues.set(attrName, clamped);
+        return clamped;
+    }
+
+    private _action(action: keyof EntityDomainInfo, delta?: number) {
+        const actionInfo = getServiceCallInfo(this._entityDomain)?.[action];
+        if (!actionInfo)
+            return;
+
+        let msg;
+        if ("attribute" in actionInfo) {
+            const newVal = this._adjustAttributeValue(
+                actionInfo.attribute,
+                delta ?? 0,
+                actionInfo.min ?? -Infinity,
+                actionInfo.max ?? Infinity,
+                actionInfo.defaultIfUnset);
+
+            msg = actionInfo.createServiceCall(this.entity_id, newVal);
         }
+        else {
+            msg = actionInfo.createServiceCall(this.entity_id);
+        }
+
+        this._callRateLimiter.call(msg);
     }
 }
 

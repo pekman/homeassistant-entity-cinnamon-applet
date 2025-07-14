@@ -123,7 +123,7 @@ class HAEntityApplet extends IconApplet {
                 return EVENT_PROPAGATE;
         }
 
-        let multiplier = this._settings.getValue("scrollMultiplier");
+        const multiplier = this._settings.getValue("scrollMultiplier");
         if (typeof multiplier === "number")
             delta *= multiplier;
         this._entityWatcher?.scrollAction(delta);
