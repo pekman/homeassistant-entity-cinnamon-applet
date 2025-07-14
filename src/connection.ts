@@ -44,7 +44,6 @@ export class EntityWatcher {
                     type: "get_states",
                     // TODO: is entity_id allowed?
                 });
-                // log.log("states " + JSON.stringify(states));
                 if (!states || !(states instanceof Array))
                     throw new Error("Invalid response from Home Assistant");
                 for (const state of states) {
@@ -58,7 +57,6 @@ export class EntityWatcher {
             },
             (conn, store) => conn.subscribeMessage(
                 store.action((_state: unknown, event: HassEvent | null) => {
-                    log.log("event: " + JSON.stringify(event));
                     if (event == null) {
                         return null;  // no change
                     }
@@ -83,7 +81,6 @@ export class EntityWatcher {
         );
 
         this._collection.subscribe((state) => {
-            // log.log(JSON.stringify(state))
             this.onUpdate?.(state);
         });
     }
@@ -106,7 +103,7 @@ export class EntityWatcher {
     ) {
         const msg = createServiceCall(action, this.entity_id, values);
         if (msg) {
-            log.log("Sending message: " + JSON.stringify(msg));
+            // log.log("Sending message: " + JSON.stringify(msg));
             this._conn.sendMessage(msg);
             // try {
             //     const response = await this._conn.sendMessagePromise(msg);
