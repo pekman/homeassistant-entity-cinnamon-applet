@@ -30,18 +30,12 @@ export class EntityWatcher {
         return this._collection.state;
     }
 
-    private readonly _entityDomain: string;
     private _collection: Collection<State>;
 
     constructor(
         private _conn: Connection,
         public readonly entity_id: string,
     ) {
-        const domain = /^(\w+)\./.exec(this.entity_id)?.[1];
-        if (!domain)
-            throw new Error("Invalid entity ID");
-        this._entityDomain = domain;
-
         this._collection = getCollection(
             _conn,
             "_entityState",
@@ -89,7 +83,7 @@ export class EntityWatcher {
         );
 
         this._collection.subscribe((state) => {
-            log.log(JSON.stringify(state))
+            // log.log(JSON.stringify(state))
             this.onUpdate?.(state);
         });
     }
@@ -99,10 +93,27 @@ export class EntityWatcher {
     }
 
     clickAction() {
-        const msg = createServiceCall("click", this.entity_id);
+        this._callServiceMaybe("click");
+    }
+
+    scrollAction(delta: number) {
+        this._callServiceMaybe("adjust", { delta });
+    }
+
+    private async _callServiceMaybe(
+        action: Parameters<typeof createServiceCall>[0],
+        values?: Parameters<typeof createServiceCall>[2],
+    ) {
+        const msg = createServiceCall(action, this.entity_id, values);
         if (msg) {
             log.log("Sending message: " + JSON.stringify(msg));
             this._conn.sendMessage(msg);
+            // try {
+            //     const response = await this._conn.sendMessagePromise(msg);
+            //     log.log("Service call response:" + JSON.stringify(response));
+            // } catch (err) {
+            //     log.error("Service call returned error: " + JSON.stringify(err));
+            // }
         }
     }
 }

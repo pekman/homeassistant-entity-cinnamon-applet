@@ -1,7 +1,7 @@
 interface ServiceCallInfo {
     domain: string;
     service: string;
-    data?: { [key: string]: unknown };
+    service_data?: { [key: string]: unknown };
 }
 
 interface ServiceCall extends ServiceCallInfo {
@@ -36,8 +36,8 @@ domainInfo.set("light", {
     adjust: {
         domain: "light",
         service: "turn_on",
-        data: {
-            brightness_step_pct: new TemplateKey("step"),
+        service_data: {
+            brightness_step_pct: new TemplateKey("delta"),
         },
     },
 });

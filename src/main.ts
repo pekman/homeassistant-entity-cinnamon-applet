@@ -2,6 +2,7 @@ import { uuid } from "../assets/metadata.json";
 import { connectToHass, EntityWatcher, type State } from "./connection";
 import * as log from "./log";
 
+const { EVENT_PROPAGATE, EVENT_STOP, ScrollDirection } = imports.gi.Clutter;
 const { IconApplet } = imports.ui.applet;
 const { AppletSettings } = imports.ui.settings;
 
@@ -16,6 +17,8 @@ class HAEntityApplet extends IconApplet {
         instanceId: number,
     ) {
         super(orientation, panel_height, instanceId);
+
+        this.actor.connect("scroll-event", this._on_applet_scrolled.bind(this));
 
         this.set_applet_icon_name("image-loading");
 
@@ -102,6 +105,29 @@ class HAEntityApplet extends IconApplet {
     override on_applet_clicked(): boolean {
         this._entityWatcher?.clickAction();
         return true;
+    }
+
+    private _on_applet_scrolled(
+        _actor: imports.gi.St.Widget,
+        event: imports.gi.Clutter.Event,
+    ) {
+        let delta: number;
+        switch (event.get_scroll_direction()) {
+            case ScrollDirection.UP:
+                delta = 1;
+                break;
+            case ScrollDirection.DOWN:
+                delta = -1;
+                break;
+            default:
+                return EVENT_PROPAGATE;
+        }
+
+        let multiplier = this._settings.getValue("scrollMultiplier");
+        if (typeof multiplier === "number")
+            delta *= multiplier;
+        this._entityWatcher?.scrollAction(delta);
+        return EVENT_STOP;
     }
 }
 
