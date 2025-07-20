@@ -1,5 +1,9 @@
 import { uuid } from "../assets/metadata.json";
-import { connectToHass, EntityController, type State } from "./entity-controller";
+import {
+    connectToHass,
+    type EntityController,
+    type State,
+} from "./entity-controller";
 import * as log from "./log";
 
 const { EVENT_PROPAGATE, EVENT_STOP, ScrollDirection } = imports.gi.Clutter;

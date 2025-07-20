@@ -5,10 +5,10 @@ import {
     type Collection,
     type Connection,
 } from "home-assistant-js-websocket";
+import { getServiceCallInfo, type EntityDomainInfo } from "./entity-domains";
 import * as log from "./log";
-import "./websocket-shim";
-import { EntityDomainInfo, getServiceCallInfo } from "./entity-domains";
 import { RateLimiter } from "./rate-limiter";
+import "./websocket-shim";
 
 const CALL_TIMEOUT_ms = 250;
 
