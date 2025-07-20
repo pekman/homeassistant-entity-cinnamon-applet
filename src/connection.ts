@@ -117,6 +117,22 @@ export class EntityWatcher {
         this._action("adjust", delta);
     }
 
+    get formattedStateValue() {
+        return this._getFormattedAttributeValue("adjust");
+    }
+
+    private _getFormattedAttributeValue(action: keyof EntityDomainInfo) {
+        const actionInfo = getServiceCallInfo(this._entityDomain)?.[action];
+        if (!actionInfo ||
+            !("attribute" in actionInfo) ||
+            !("formatValue" in actionInfo)
+        ) {
+            return undefined;
+        }
+        const val = this.state.attributes?.[actionInfo.attribute];
+        return actionInfo.formatValue(val);
+    }
+
     private _adjustAttributeValue(
         attrName: string,
         delta: number,

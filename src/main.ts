@@ -86,11 +86,21 @@ class HAEntityApplet extends IconApplet {
     }
 
     private _onEntityUpdate(state: State) {
-        const msg =
-            state.state === "on" ? this._("On") :
-            state.state === "off" ? this._("Off") :
-            state.state === "unavailable" ? this._("Unavailable")
-            : state.state;
+        let msg: string;
+        switch (state.state) {
+            case "on":
+                msg = this._entityWatcher?.formattedStateValue ?? this._("On");
+                break;
+            case "off":
+                msg = this._("Off");
+                break;
+            case "unavailable":
+                msg = this._("Unavailable");
+                break;
+            default:
+                msg = state.state;
+                break;
+        }
         this.set_applet_tooltip(msg);
     }
 

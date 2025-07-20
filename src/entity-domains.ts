@@ -20,6 +20,7 @@ interface AttributeAction {
     readonly defaultIfUnset: number;
 
     createServiceCall(entity_id: string, value: number): ServiceCall;
+    formatValue?(value: unknown): string | undefined;
 }
 
 type Action = SimpleAction | AttributeAction;
@@ -48,6 +49,18 @@ const defaultClickAction: EntityDomainInfo = {
     },
 }
 
+function tryFormatPercentage(this: AttributeAction, value: unknown) {
+    if (typeof value === "number" &&
+        this.max && (this.min === 0 || this.min === -this.max)
+    ) {
+        const formatter = new Intl.NumberFormat(
+            undefined,  // use default locale
+            { maximumFractionDigits: 0 });
+        return formatter.format(100 * value / this.max) + "%";
+    }
+    return undefined;
+}
+
 const domainInfo = new Map<string, EntityDomainInfo>();
 
 domainInfo.set("light", {
@@ -65,6 +78,8 @@ domainInfo.set("light", {
             service: brightness > 0 ? "turn_on" : "turn_off",
             service_data: brightness > 0 ? { brightness } : {},
         }),
+
+        formatValue: tryFormatPercentage,
     },
 });
 
