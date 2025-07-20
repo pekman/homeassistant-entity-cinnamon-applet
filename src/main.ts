@@ -1,5 +1,5 @@
 import { uuid } from "../assets/metadata.json";
-import { connectToHass, EntityWatcher, type State } from "./connection";
+import { connectToHass, EntityController, type State } from "./entity-controller";
 import * as log from "./log";
 
 const { EVENT_PROPAGATE, EVENT_STOP, ScrollDirection } = imports.gi.Clutter;
@@ -9,7 +9,7 @@ const { AppletSettings } = imports.ui.settings;
 
 class HAEntityApplet extends IconApplet {
     private _settings: imports.ui.settings.AppletSettings;
-    private _entityWatcher?: EntityWatcher | null;
+    private _entityController?: EntityController | null;
 
     constructor(
         orientation: imports.gi.St.Side,
@@ -50,9 +50,9 @@ class HAEntityApplet extends IconApplet {
             return;
         }
 
-        let entityWatcher;
+        let entityController;
         try {
-            entityWatcher = await connectToHass(
+            entityController = await connectToHass(
                 hassUrl,
                 accessToken,
                 entity,
@@ -62,26 +62,26 @@ class HAEntityApplet extends IconApplet {
             return;
         }
 
-        if (this._entityWatcher) {
+        if (this._entityController) {
             // If we had multiple connection attempts executing
             // simultaneously, and one of them has already connected,
             // throw away this connection. (This can easily happen
             // when configuration is being changed.)
-            entityWatcher.close();
+            entityController.close();
             return;
         }
 
-        entityWatcher.onUpdate = this._onEntityUpdate.bind(this);
-        this._entityWatcher = entityWatcher;
+        entityController.onUpdate = this._onEntityUpdate.bind(this);
+        this._entityController = entityController;
 
         this.set_applet_tooltip(this._("Connected"));
     }
 
     private _closeConnection() {
-        if (this._entityWatcher) {
+        if (this._entityController) {
             log.log("Closing Home Assistant connection");
-            this._entityWatcher.close();
-            this._entityWatcher = null;
+            this._entityController.close();
+            this._entityController = null;
         }
     }
 
@@ -89,7 +89,8 @@ class HAEntityApplet extends IconApplet {
         let msg: string;
         switch (state.state) {
             case "on":
-                msg = this._entityWatcher?.formattedStateValue ?? this._("On");
+                msg = this._entityController?.formattedStateValue ??
+                    this._("On");
                 break;
             case "off":
                 msg = this._("Off");
@@ -113,7 +114,7 @@ class HAEntityApplet extends IconApplet {
     }
 
     override on_applet_clicked(): boolean {
-        this._entityWatcher?.clickAction();
+        this._entityController?.clickAction();
         return true;
     }
 
@@ -136,7 +137,7 @@ class HAEntityApplet extends IconApplet {
         const multiplier = this._settings.getValue("scrollMultiplier");
         if (typeof multiplier === "number")
             delta *= multiplier;
-        this._entityWatcher?.scrollAction(delta);
+        this._entityController?.scrollAction(delta);
         return EVENT_STOP;
     }
 }

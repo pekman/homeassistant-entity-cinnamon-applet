@@ -26,7 +26,7 @@ interface HassEvent {
     };
 }
 
-export class EntityWatcher {
+export class EntityController {
     onUpdate?: (state: State) => void;
 
     get state() {
@@ -185,5 +185,5 @@ export async function connectToHass(
     log.log(`Connecting to ${hassUrl}`);
     const conn = await createConnection({ auth });
     log.log(`Connected to ${hassUrl}`);
-    return new EntityWatcher(conn, entityId);
+    return new EntityController(conn, entityId);
 }
