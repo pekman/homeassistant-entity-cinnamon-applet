@@ -14,6 +14,11 @@
         "default": "",
         "description": "Entity to control"
     },
+    "name": {
+        "type": "entry",
+        "default": "",
+        "description": "Entity name to show in tooltip"
+    },
     "scrollMultiplier": {
         "type": "spinbutton",
         "default": 5,
