@@ -22,5 +22,36 @@
         "step": 1,
         "units": "1/255",
         "description": "Mouse wheel step"
+    },
+    "iconHeader": {
+        "type": "header",
+        "description": "Applet icon"
+    },
+    "onIcon": {
+        "type": "iconfilechooser",
+        "default": "",
+        "description": "Icon when on"
+    },
+    "differentOffIcon": {
+        "type": "switch",
+        "default": false,
+        "description": "Use different icon when off"
+    },
+    "offIcon": {
+        "type": "iconfilechooser",
+        "default": "",
+        "description": "Icon when off",
+        "dependency": "differentOffIcon"
+    },
+    "differentUnavailableIcon": {
+        "type": "switch",
+        "default": false,
+        "description": "Use different icon when unavailable"
+    },
+    "unavailableIcon": {
+        "type": "iconfilechooser",
+        "default": "",
+        "description": "Icon when unavailable",
+        "dependency": "differentUnavailableIcon"
     }
 }

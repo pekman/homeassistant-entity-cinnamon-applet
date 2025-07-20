@@ -24,14 +24,28 @@ class HAEntityApplet extends IconApplet {
 
         this.actor.connect("scroll-event", this._on_applet_scrolled.bind(this));
 
-        this.set_applet_icon_name("image-loading");
-
         this._settings = new AppletSettings(this, uuid, instanceId);
         this._settings.connect("settings-changed", () => this._reload());
     }
 
+    private get _onIcon(): string {
+        return this._settings.getValue("onIcon");
+    }
+    private get _offIcon(): string {
+        return this._settings.getValue("differentOffIcon")
+            ? this._settings.getValue("offIcon")
+            : this._onIcon;
+    }
+    private get _unavailableIcon(): string {
+        return this._settings.getValue("differentUnavailableIcon")
+            ? this._settings.getValue("unavailableIcon")
+            : this._offIcon;
+    }
+
     private async _reload() {
         this.set_applet_tooltip(this._("Connecting…"));
+        this.set_applet_icon_name(this._unavailableIcon);
+
         this._closeConnection();
 
         const hassUrl = this._settings.getValue("hassUrl");
@@ -91,22 +105,28 @@ class HAEntityApplet extends IconApplet {
 
     private _onEntityUpdate(state: State) {
         let msg: string;
+        let icon: string;
         switch (state.state) {
             case "on":
                 msg = this._entityController?.formattedStateValue ??
                     this._("On");
+                icon = this._onIcon;
                 break;
             case "off":
                 msg = this._("Off");
+                icon = this._offIcon;
                 break;
             case "unavailable":
                 msg = this._("Unavailable");
+                icon = this._unavailableIcon;
                 break;
             default:
                 msg = state.state;
+                icon = this._onIcon;  // some other state; treat it as "on"
                 break;
         }
         this.set_applet_tooltip(msg);
+        this.set_applet_icon_name(icon);
     }
 
     override on_applet_added_to_panel() {
