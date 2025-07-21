@@ -18,6 +18,10 @@ export default {
         copy({
             targets: [
                 {
+                    src: "assets/*",
+                    dest: "dist",
+                },
+                {
                     src: "node_modules/@mdi/svg/svg/*.svg",
                     dest: "dist/mdi-icons",
 

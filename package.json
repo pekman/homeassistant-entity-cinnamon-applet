@@ -4,7 +4,8 @@
   "description": "Control Home Assistent entity from Cinnamon applet",
   "type": "module",
   "scripts": {
-    "build": "rollup --config && cp assets/* dist/",
+    "build": "rollup --config",
+    "clean": "rm -r dist/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Pekka Ekman <pekman@users.noreply.github.com>",
