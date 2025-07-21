@@ -7,8 +7,13 @@ import {
 import * as log from "./log";
 
 const { EVENT_PROPAGATE, EVENT_STOP, ScrollDirection } = imports.gi.Clutter;
+const { PathBuf } = imports.gi.GLib;
+const { IconTheme } = imports.gi.Gtk;
 const { IconApplet } = imports.ui.applet;
 const { AppletSettings } = imports.ui.settings;
+
+
+const ICON_DIR = "mdi-icons";
 
 
 class HAEntityApplet extends IconApplet {
@@ -178,9 +183,25 @@ class HAEntityApplet extends IconApplet {
     }
 }
 
-const main = (
-    _metadata: unknown,
+function main(
+    metadata: imports.ui.applet.AppletMetadata,
     ...args: ConstructorParameters<typeof HAEntityApplet>
-) => new HAEntityApplet(...args);
+) {
+    // add Home Assistant icons to icon path
+    const path = new PathBuf();
+    path.push(metadata.path);
+    path.push(ICON_DIR);
+    const iconPath = path.to_path();
+    const iconTheme = IconTheme.get_default();
+    if (iconPath && !(iconTheme.get_search_path() ?? []).includes(iconPath)) {
+        // Using a "legacy feature" of the search path. This allows us
+        // to simply have the icons directly in the directory. The
+        // proper way would be to create an `index.theme` file and
+        // some kind of directory structure.
+        iconTheme.append_search_path(iconPath);
+    }
+
+    return new HAEntityApplet(...args);
+};
 
 export default main;

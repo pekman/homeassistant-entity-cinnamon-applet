@@ -33,7 +33,9 @@
         "description": "Applet icon"
     },
     "onIcon": {
-        "type": "iconfilechooser",
+        "type": "custom",
+        "file": "settings_widget.py",
+        "widget": "IconChooserWithLocalIcons",
         "default": "",
         "description": "Icon when on"
     },
@@ -43,7 +45,9 @@
         "description": "Use different icon when off"
     },
     "offIcon": {
-        "type": "iconfilechooser",
+        "type": "custom",
+        "file": "settings_widget.py",
+        "widget": "IconChooserWithLocalIcons",
         "default": "",
         "description": "Icon when off",
         "dependency": "differentOffIcon"
@@ -54,7 +58,9 @@
         "description": "Use different icon when unavailable"
     },
     "unavailableIcon": {
-        "type": "iconfilechooser",
+        "type": "custom",
+        "file": "settings_widget.py",
+        "widget": "IconChooserWithLocalIcons",
         "default": "",
         "description": "Icon when unavailable",
         "dependency": "differentUnavailableIcon"
