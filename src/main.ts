@@ -42,9 +42,16 @@ class HAEntityApplet extends IconApplet {
             : this._offIcon;
     }
 
+    private _setIcon(iconNameOrPath: string) {
+        if (iconNameOrPath.includes("/"))
+            this.set_applet_icon_symbolic_path(iconNameOrPath);
+        else
+            this.set_applet_icon_symbolic_name(iconNameOrPath);
+    }
+
     private async _reload() {
         this.set_applet_tooltip(this._("Connecting…"));
-        this.set_applet_icon_name(this._unavailableIcon);
+        this._setIcon(this._unavailableIcon);
 
         this._closeConnection();
 
@@ -131,7 +138,7 @@ class HAEntityApplet extends IconApplet {
             tooltip = `${name} · ${tooltip}`;
 
         this.set_applet_tooltip(tooltip);
-        this.set_applet_icon_name(icon);
+        this._setIcon(icon);
     }
 
     override on_applet_added_to_panel() {
