@@ -25,7 +25,7 @@
         "min": -255,
         "max": 255,
         "step": 1,
-        "units": "1/255",
+        "units": "1–255 for light",
         "description": "Mouse wheel step"
     },
     "iconHeader": {
