@@ -16,6 +16,10 @@ const { AppletSettings } = imports.ui.settings;
 
 const ICON_DIR = "mdi-icons";
 
+const UNCONFIGURED_ICON = "dialog-question";
+const ERROR_ICON = "dialog-error";
+const OPEN_URL_MENU_ICON = "web-browser";
+
 
 class HAEntityApplet extends IconApplet {
     private _settings: imports.ui.settings.AppletSettings;
@@ -35,7 +39,7 @@ class HAEntityApplet extends IconApplet {
 
         const openHassMenuItem = new MenuItem(
             this._("Open Home Assistant in web browser"),
-            "web-browser",  // icon
+            OPEN_URL_MENU_ICON,
             () => {
                 const url = this._settings.getValue("hassUrl");
                 if (typeof url === "string" && /^https?:\/\//.test(url)) {
@@ -75,9 +79,6 @@ class HAEntityApplet extends IconApplet {
     }
 
     private async _reload() {
-        this.set_applet_tooltip(this._("Connecting…"));
-        this._setIcon(this._unavailableIcon);
-
         this._closeConnection();
 
         const hassUrl = this._settings.getValue("hassUrl");
@@ -89,6 +90,8 @@ class HAEntityApplet extends IconApplet {
             typeof entity !== "string"
         ) {
             log.error("Invalid configuration");
+            this.set_applet_tooltip(this._("Invalid configuration"));
+            this._setIcon(ERROR_ICON);
             return;
         }
         if (accessToken === "" ||
@@ -96,9 +99,13 @@ class HAEntityApplet extends IconApplet {
             hassUrl === "" ||
             hassUrl === this._settings.getDefaultValue("hassUrl")
         ) {
-            log.error("Not configured");
+            this.set_applet_tooltip(this._("Not configured"));
+            this._setIcon(UNCONFIGURED_ICON);
             return;
         }
+
+        this.set_applet_tooltip(this._("Connecting…"));
+        this._setIcon(this._unavailableIcon);
 
         let entityController;
         try {
