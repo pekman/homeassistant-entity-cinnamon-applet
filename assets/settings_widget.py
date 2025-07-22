@@ -21,14 +21,17 @@ if not _path or str(ICON_DIR) not in _path:
     _theme.append_search_path(str(ICON_DIR))
 
 
+mdi_icons = sorted(
+    file.stem
+    for file in ICON_DIR.iterdir()
+    if file.is_file() and file.name.endswith("-symbolic.svg")
+)
+
+
 class IconChooserWithLocalIcons(JSONSettingsIconChooser):
     def __init__(self, info, key, settings):
         info['default_category'] = "Home Assistant"
         super().__init__(key, settings, info)
 
         dialog = self.content_widget.get_dialog()
-        dialog.add_custom_category("Home Assistant", [
-            file.stem
-            for file in ICON_DIR.iterdir()
-            if file.is_file() and file.name.endswith("-symbolic.svg")
-        ])
+        dialog.add_custom_category("Home Assistant", mdi_icons)
