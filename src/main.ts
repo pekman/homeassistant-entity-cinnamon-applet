@@ -11,7 +11,9 @@ const { EVENT_PROPAGATE, EVENT_STOP, ScrollDirection } = imports.gi.Clutter;
 const { CURRENT_TIME } = imports.gi.Gdk;
 const { PathBuf } = imports.gi.GLib;
 const { IconTheme, show_uri_on_window } = imports.gi.Gtk;
-const { IconApplet, MenuItem } = imports.ui.applet;
+const { IconType } = imports.gi.St;
+const { IconApplet } = imports.ui.applet;
+const { PopupIconMenuItem } = imports.ui.popupMenu;
 const { AppletSettings } = imports.ui.settings;
 
 
@@ -19,7 +21,7 @@ const ICON_DIR = "mdi-icons";
 
 const UNCONFIGURED_ICON = "system-run";
 const ERROR_ICON = "dialog-error";
-const OPEN_URL_MENU_ICON = "web-browser";
+const OPEN_URL_MENUITEM_ICON = "web-browser";
 
 
 const isValidHassUrl = (url: unknown) =>
@@ -45,23 +47,24 @@ class HAEntityApplet extends IconApplet {
         this._settings = new AppletSettings(this, uuid, instanceId);
         this._settings.connect("settings-changed", () => this._reload());
 
-        const openHassMenuItem = new MenuItem(
+        const openHassMenuItem = new PopupIconMenuItem(
             this._("Open Home Assistant in web browser"),
-            OPEN_URL_MENU_ICON,
-            () => {
-                const url = this._settings.getValue("hassUrl");
-                if (isValidHassUrl(url)) {
-                    try {
-                        show_uri_on_window(null, url, CURRENT_TIME);
-                    } catch (err) {
-                        log.error(`Error opening URL: ${url}`, err);
-                    }
-                }
-                else {
-                    log.warn(`Cannot open invalid URL: ${url}`);
-                }
-            },
+            OPEN_URL_MENUITEM_ICON,
+            IconType.SYMBOLIC,
         );
+        openHassMenuItem.connect("activate", () => {
+            const url = this._settings.getValue("hassUrl");
+            if (isValidHassUrl(url)) {
+                try {
+                    show_uri_on_window(null, url, CURRENT_TIME);
+                } catch (err) {
+                    log.error(`Error opening URL: ${url}`, err);
+                }
+            }
+            else {
+                log.warn(`Cannot open invalid URL: ${url}`);
+            }
+        });
         this._applet_context_menu.addMenuItem(openHassMenuItem);
     }
 
