@@ -1,4 +1,5 @@
 import { uuid } from "../assets/metadata.json";
+import { hassUrl as hassUrlSetting } from "../assets/settings-schema.json";
 import {
     connectToHass,
     type EntityController,
@@ -19,6 +20,12 @@ const ICON_DIR = "mdi-icons";
 const UNCONFIGURED_ICON = "dialog-question";
 const ERROR_ICON = "dialog-error";
 const OPEN_URL_MENU_ICON = "web-browser";
+
+
+const isValidHassUrl = (url: unknown) =>
+    typeof url === "string" &&
+    /^https?:\/\//.test(url) &&
+    url !== hassUrlSetting.default;
 
 
 class HAEntityApplet extends IconApplet {
@@ -42,7 +49,7 @@ class HAEntityApplet extends IconApplet {
             OPEN_URL_MENU_ICON,
             () => {
                 const url = this._settings.getValue("hassUrl");
-                if (typeof url === "string" && /^https?:\/\//.test(url)) {
+                if (isValidHassUrl(url)) {
                     try {
                         show_uri_on_window(null, url, CURRENT_TIME);
                     } catch (err) {
@@ -94,11 +101,7 @@ class HAEntityApplet extends IconApplet {
             this._setIcon(ERROR_ICON);
             return;
         }
-        if (accessToken === "" ||
-            entity === "" ||
-            hassUrl === "" ||
-            hassUrl === this._settings.getDefaultValue("hassUrl")
-        ) {
+        if (accessToken === "" || entity === "" || !isValidHassUrl(hassUrl)) {
             this.set_applet_tooltip(this._("Not configured"));
             this._setIcon(UNCONFIGURED_ICON);
             return;
