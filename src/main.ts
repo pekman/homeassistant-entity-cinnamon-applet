@@ -7,9 +7,10 @@ import {
 import * as log from "./log";
 
 const { EVENT_PROPAGATE, EVENT_STOP, ScrollDirection } = imports.gi.Clutter;
+const { CURRENT_TIME } = imports.gi.Gdk;
 const { PathBuf } = imports.gi.GLib;
-const { IconTheme } = imports.gi.Gtk;
-const { IconApplet } = imports.ui.applet;
+const { IconTheme, show_uri_on_window } = imports.gi.Gtk;
+const { IconApplet, MenuItem } = imports.ui.applet;
 const { AppletSettings } = imports.ui.settings;
 
 
@@ -31,6 +32,25 @@ class HAEntityApplet extends IconApplet {
 
         this._settings = new AppletSettings(this, uuid, instanceId);
         this._settings.connect("settings-changed", () => this._reload());
+
+        const openHassMenuItem = new MenuItem(
+            this._("Open Home Assistant in web browser"),
+            "web-browser",  // icon
+            () => {
+                const url = this._settings.getValue("hassUrl");
+                if (typeof url === "string" && /^https?:\/\//.test(url)) {
+                    try {
+                        show_uri_on_window(null, url, CURRENT_TIME);
+                    } catch (err) {
+                        log.error(`Error opening URL: ${url}`, err);
+                    }
+                }
+                else {
+                    log.warn(`Cannot open invalid URL: ${url}`);
+                }
+            },
+        );
+        this._applet_context_menu.addMenuItem(openHassMenuItem);
     }
 
     private get _onIcon(): string {
