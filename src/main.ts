@@ -31,6 +31,7 @@ const isValidHassUrl = (url: unknown) =>
 class HAEntityApplet extends IconApplet {
     private _settings: imports.ui.settings.AppletSettings;
     private _entityController?: EntityController | null;
+    private _hasValidSettings = false;
 
     constructor(
         orientation: imports.gi.St.Side,
@@ -99,13 +100,17 @@ class HAEntityApplet extends IconApplet {
             log.error("Invalid configuration");
             this.set_applet_tooltip(this._("Invalid configuration"));
             this._setIcon(ERROR_ICON);
+            this._hasValidSettings = false;
             return;
         }
         if (accessToken === "" || entity === "" || !isValidHassUrl(hassUrl)) {
             this.set_applet_tooltip(this._("Not configured"));
             this._setIcon(UNCONFIGURED_ICON);
+            this._hasValidSettings = false;
             return;
         }
+
+        this._hasValidSettings = true;
 
         this.set_applet_tooltip(this._("Connecting…"));
         this._setIcon(this._unavailableIcon);
@@ -185,7 +190,10 @@ class HAEntityApplet extends IconApplet {
     }
 
     override on_applet_clicked(): boolean {
-        this._entityController?.clickAction();
+        if (this._hasValidSettings)
+            this._entityController?.clickAction();
+        else
+            this.configureApplet();
         return true;
     }
 
