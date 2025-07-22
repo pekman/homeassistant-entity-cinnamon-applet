@@ -17,7 +17,7 @@ const { AppletSettings } = imports.ui.settings;
 
 const ICON_DIR = "mdi-icons";
 
-const UNCONFIGURED_ICON = "dialog-question";
+const UNCONFIGURED_ICON = "system-run";
 const ERROR_ICON = "dialog-error";
 const OPEN_URL_MENU_ICON = "web-browser";
 
