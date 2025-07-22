@@ -96,7 +96,7 @@ class HAEntityApplet extends IconApplet {
         if (typeof hassUrl !== "string" ||
             typeof accessToken !== "string" ||
             typeof entity !== "string"
-        ) {
+        ) {  // this shouldn't be possible if configured in config UI
             log.error("Invalid configuration");
             this.set_applet_tooltip(this._("Invalid configuration"));
             this._setIcon(ERROR_ICON);
@@ -104,7 +104,9 @@ class HAEntityApplet extends IconApplet {
             return;
         }
         if (accessToken === "" || entity === "" || !isValidHassUrl(hassUrl)) {
-            this.set_applet_tooltip(this._("Not configured"));
+            this.set_applet_tooltip(this._(
+                "Not configured or invalid configuration. Click to configure."
+            ));
             this._setIcon(UNCONFIGURED_ICON);
             this._hasValidSettings = false;
             return;
