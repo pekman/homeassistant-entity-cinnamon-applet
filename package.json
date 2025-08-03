@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "rollup --config",
+    "install-to-cinnamon": "tsx ./scripts/install.ts",
     "clean": "rm -r dist/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -21,8 +22,10 @@
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.4",
+    "@tsconfig/node20": "^20.1.6",
     "rollup": "^4.44.2",
     "rollup-plugin-copy": "^3.5.0",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.36.0"
   }

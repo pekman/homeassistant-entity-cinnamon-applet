@@ -23,5 +23,6 @@
         "types": [
             "@ci-types/cjs"
         ],
-    }
+    },
+    "exclude": ["scripts/*"]
 }

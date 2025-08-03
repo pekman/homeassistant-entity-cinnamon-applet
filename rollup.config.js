@@ -13,7 +13,7 @@ export default {
     },
     plugins: [
         resolve(),
-        typescript(),
+        typescript({ exclude: "scripts/*" }),
         json(),
         copy({
             targets: [
