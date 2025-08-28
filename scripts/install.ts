@@ -30,6 +30,7 @@ if (help) {
 }
 
 
+// eslint-disable-next-line  @typescript-eslint/no-explicit-any
 function doOrDryRun<T extends (...args: any[]) => void>(
     f: T,
     ...args: Parameters<T>

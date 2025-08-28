@@ -8,6 +8,7 @@
     "build-zip": "rollup --config && tsx ./scripts/make-zip.ts",
     "install-to-cinnamon": "tsx ./scripts/install.ts",
     "clean": "rm -r dist/",
+    "lint": "eslint",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Pekka Ekman <pekman@users.noreply.github.com>",
