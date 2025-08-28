@@ -8,6 +8,7 @@ import {
 import { getServiceCallInfo, type EntityDomainInfo } from "./entity-domains";
 import * as log from "./log";
 import { RateLimiter } from "./rate-limiter";
+import { SystemSleepListener } from "./system-sleep-listener";
 import "./websocket-shim";
 
 const CALL_TIMEOUT_ms = 250;
@@ -37,11 +38,13 @@ export class EntityController {
     private _collection: Collection<State>;
     private readonly _expectedAttrValues = new Map<string, number>();
 
-    private _callRateLimiter = new RateLimiter(
+    private readonly _callRateLimiter = new RateLimiter(
         this._conn,
         this._conn.sendMessagePromise,
         CALL_TIMEOUT_ms,
     );
+
+    private readonly _systemSleepListener = new SystemSleepListener();
 
     constructor(
         private readonly _conn: Connection,
@@ -102,6 +105,24 @@ export class EntityController {
                     this._expectedAttrValues.delete(attr);
             }
             this.onUpdate?.(state);
+        });
+
+        // Disconnect on system sleep and reconnect on wakeup
+        let reconnectOnWakeup: (() => void) | null = null;
+        this._systemSleepListener.addEventListener("sleep", () => {
+            // This condition should always be true, but if we somehow
+            // get multiple sleep events, let's not leave never
+            // resolved promises laying around.
+            if (reconnectOnWakeup == null) {
+                _conn.suspendReconnectUntil(new Promise((resolve) => {
+                    reconnectOnWakeup = resolve;
+                }));
+                _conn.suspend();
+            }
+        });
+        this._systemSleepListener.addEventListener("wakeup", () => {
+            reconnectOnWakeup?.();
+            reconnectOnWakeup = null;
         });
     }
 
@@ -185,5 +206,6 @@ export async function connectToHass(
     log.log(`Connecting to ${hassUrl}`);
     const conn = await createConnection({ auth });
     log.log(`Connected to ${hassUrl}`);
+
     return new EntityController(conn, entityId);
 }
