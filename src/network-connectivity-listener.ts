@@ -3,15 +3,25 @@ import * as log from "./log";
 const Gio = imports.gi.Gio;
 
 
-export class SystemSleepListener {
-    private _systemBus?: imports.gi.Gio.DBusConnection;
+/**
+ * Listen to network-connectivity-related system events.
+ *
+ * Events:
+ * - sleep: before system sleep
+ * - wakeup: after system woke up from sleep
+ * - networkConnectivityChanged: network connectivity state changed
+ */
+export class NetworkConnectivityListener {
     private readonly _eventListeners = {
         sleep: new Set<() => void>(),
         wakeup: new Set<() => void>(),
-    };
+        networkConnectivityChanged: new Set<() => void>(),
+    } as const;
+    private _systemBus?: imports.gi.Gio.DBusConnection;
 
     constructor() {
-        // based on https://bbs.archlinux.org/viewtopic.php?id=238749
+        // Monitor system sleep/wakeup
+        // (based on https://bbs.archlinux.org/viewtopic.php?id=238749 )
         Gio.bus_get(Gio.BusType.SYSTEM, null, (_, result) => {
             try {
                 this._systemBus = Gio.bus_get_finish(result);
@@ -39,17 +49,32 @@ export class SystemSleepListener {
                         listener();
                 });
         });
+
+        // Monitor network connectivity
+        const netmon = Gio.NetworkMonitor.get_default();
+        netmon.connect("notify::connectivity", () => {
+            const [asStr] = Object.entries(Gio.NetworkConnectivity).find(
+                ([, val]) => val === netmon.connectivity
+            ) ?? ["unknown"];
+            log.log(`Network connectivity changed to ${asStr}`);
+
+            for (const listener of
+                 this._eventListeners.networkConnectivityChanged)
+            {
+                listener();
+            }
+        });
     }
 
     addEventListener(
-        type: keyof SystemSleepListener["_eventListeners"],
+        type: keyof NetworkConnectivityListener["_eventListeners"],
         listener: () => void,
     ) {
         this._eventListeners[type]?.add(listener);
     }
 
     removeEventListener(
-        type: keyof SystemSleepListener["_eventListeners"],
+        type: keyof NetworkConnectivityListener["_eventListeners"],
         listener: () => void,
     ) {
         this._eventListeners[type]?.delete(listener);

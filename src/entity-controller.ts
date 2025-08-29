@@ -8,7 +8,7 @@ import {
 import { getServiceCallInfo, type EntityDomainInfo } from "./entity-domains";
 import * as log from "./log";
 import { RateLimiter } from "./rate-limiter";
-import { SystemSleepListener } from "./system-sleep-listener";
+import { NetworkConnectivityListener } from "./network-connectivity-listener";
 import "./websocket-shim";
 
 const CALL_TIMEOUT_ms = 250;
@@ -44,7 +44,8 @@ export class EntityController {
         CALL_TIMEOUT_ms,
     );
 
-    private readonly _systemSleepListener = new SystemSleepListener();
+    private readonly _networkConnectivityListener =
+        new NetworkConnectivityListener();
 
     constructor(
         private readonly _conn: Connection,
@@ -109,7 +110,7 @@ export class EntityController {
 
         // Disconnect on system sleep and reconnect on wakeup
         let reconnectOnWakeup: (() => void) | null = null;
-        this._systemSleepListener.addEventListener("sleep", () => {
+        this._networkConnectivityListener.addEventListener("sleep", () => {
             // This condition should always be true, but if we somehow
             // get multiple sleep events, let's not leave never
             // resolved promises laying around.
@@ -117,13 +118,28 @@ export class EntityController {
                 _conn.suspendReconnectUntil(new Promise((resolve) => {
                     reconnectOnWakeup = resolve;
                 }));
+                log.log("Suspending connection");
                 _conn.suspend();
             }
         });
-        this._systemSleepListener.addEventListener("wakeup", () => {
+        this._networkConnectivityListener.addEventListener("wakeup", () => {
+            log.log("Reconnecting")
             reconnectOnWakeup?.();
             reconnectOnWakeup = null;
         });
+
+        // When network connectivity changes, check connection status
+        // and let the library reconnect if connection lost
+        this._networkConnectivityListener.addEventListener(
+            "networkConnectivityChanged",
+            () => {
+                // don't ping if connection suspended for system sleep
+                if (reconnectOnWakeup == null) {
+                    log.log("Checking if connection alive");
+                    _conn.ping()
+                }
+            },
+        );
     }
 
     close() {
