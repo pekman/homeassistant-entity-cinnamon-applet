@@ -166,8 +166,15 @@ export class EntityController {
         ) {
             return undefined;
         }
-        const val = this.state.attributes?.[actionInfo.attribute];
-        return actionInfo.formatValue(val);
+
+        const currentVal = this.state.attributes?.[actionInfo.attribute];
+        let formattedVal = actionInfo.formatValue(currentVal);
+        if (formattedVal != null &&
+            this._expectedAttrValues.has(actionInfo.attribute))
+        {
+            formattedVal += "…";
+        }
+        return formattedVal;
     }
 
     private _adjustAttributeValue(
