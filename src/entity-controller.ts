@@ -7,11 +7,12 @@ import {
 } from "home-assistant-js-websocket";
 import { getServiceCallInfo, type EntityDomainInfo } from "./entity-domains";
 import * as log from "./log";
-import { RateLimiter } from "./rate-limiter";
 import { NetworkConnectivityListener } from "./network-connectivity-listener";
+import { RateLimiter } from "./rate-limiter";
 import "./websocket-shim";
 
 const CALL_TIMEOUT_ms = 250;
+const DISCARD_PENDING_CHANGE_TIMEOUT_ms = 10000;
 
 export interface State {
     entity_id: string;
@@ -27,6 +28,54 @@ interface HassEvent {
     };
 }
 
+
+class PendingChanges {
+    private _map = new Map<string, { value: number, timeoutId: number }>();
+
+    constructor(
+        public onTimeoutDiscard: (attr: string) => void,
+    ) {}
+
+    private _onTimeout(attr: string) {
+        this._map.delete(attr);
+        this.onTimeoutDiscard(attr);
+    }
+
+    has(attr: string): boolean {
+        return this._map.has(attr);
+    }
+
+    get(attr: string): number | undefined {
+        return this._map.get(attr)?.value;
+    }
+
+    set(attr: string, value: number): this {
+        const change = this._map.get(attr);
+        if (change)
+            clearTimeout(change.timeoutId);
+
+        this._map.set(attr, {
+            value,
+            timeoutId: setTimeout(
+                this._onTimeout.bind(this),
+                DISCARD_PENDING_CHANGE_TIMEOUT_ms,
+                attr,
+            ),
+        });
+        return this;
+    }
+
+    /** Delete attributes that are no longer pending */
+    deleteMatching(newAttributeValues: { [name: string]: unknown }) {
+        for (const [attr, { value, timeoutId }] of [...this._map]) {
+            if (newAttributeValues[attr] === value) {
+                clearTimeout(timeoutId);
+                this._map.delete(attr);
+            }
+        }
+    }
+}
+
 export class EntityController {
     onUpdate?: (state: State) => void;
 
@@ -36,7 +85,9 @@ export class EntityController {
 
     private readonly _entityDomain: string;
     private _collection: Collection<State>;
-    private readonly _expectedAttrValues = new Map<string, number>();
+    private readonly _expectedAttrValues = new PendingChanges(
+        () => this.onUpdate?.(this.state),
+    );
 
     private readonly _callRateLimiter = new RateLimiter(
         this._conn,
@@ -101,10 +152,7 @@ export class EntityController {
         );
 
         this._collection.subscribe((state) => {
-            for (const [attr, val] of [...this._expectedAttrValues]) {
-                if (state.attributes[attr] === val)
-                    this._expectedAttrValues.delete(attr);
-            }
+            this._expectedAttrValues.deleteMatching(state.attributes);
             this.onUpdate?.(state);
         });
 
