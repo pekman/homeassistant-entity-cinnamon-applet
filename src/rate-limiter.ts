@@ -18,7 +18,8 @@ export class RateLimiter<ArgsT extends unknown[]> {
     constructor(
         public readonly thisArg: unknown,
         public readonly f: (...args: ArgsT) => Promise<void>,
-        public timeoutMilliseconds: number,
+        public timeout_ms: number,
+        public minCallInterval_ms: number = 0,
         public onerror?: (error: unknown, callArgs: ArgsT) => void,
     ) {}
 
@@ -32,16 +33,25 @@ export class RateLimiter<ArgsT extends unknown[]> {
 
         let nextCallArgs: ArgsT | undefined = args;
         do {
+            // call with timeout
             try {
                 await Promise.race([
                     this.f.apply(this.thisArg, nextCallArgs),
                     new Promise((_resolve, reject) => setTimeout(
                         () => reject(new Timeout()),
-                        this.timeoutMilliseconds,
+                        this.timeout_ms,
                     )),
                 ]);
             } catch (err) {
                 this.onerror?.(err, nextCallArgs);
+            }
+
+            // delay between calls
+            if (this.minCallInterval_ms > 0) {
+                await new Promise((resolve) => setTimeout(
+                    resolve,
+                    this.minCallInterval_ms,
+                ));
             }
 
             nextCallArgs = this._enqueuedCallArgs;

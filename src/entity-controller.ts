@@ -12,6 +12,7 @@ import { RateLimiter } from "./rate-limiter";
 import "./websocket-shim";
 
 const CALL_TIMEOUT_ms = 250;
+const MIN_CALL_INTERVAL_ms = 100;
 const DISCARD_PENDING_CHANGE_TIMEOUT_ms = 10000;
 
 export interface State {
@@ -93,6 +94,7 @@ export class EntityController {
         this._conn,
         this._conn.sendMessagePromise,
         CALL_TIMEOUT_ms,
+        MIN_CALL_INTERVAL_ms,
     );
 
     private readonly _networkConnectivityListener =
