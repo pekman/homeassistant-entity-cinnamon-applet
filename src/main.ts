@@ -22,6 +22,7 @@ const ICON_DIR = "mdi-icons";
 const UNCONFIGURED_ICON = "system-run";
 const ERROR_ICON = "dialog-error";
 const OPEN_URL_MENUITEM_ICON = "web-browser";
+const RECONNECT_MENUITEM_ICON = "view-refresh";
 
 
 const isValidHassUrl = (url: unknown) =>
@@ -47,6 +48,8 @@ class HAEntityApplet extends IconApplet {
         this._settings = new AppletSettings(this, uuid, instanceId);
         this._settings.connect("settings-changed", () => this._reload());
 
+        // popup menu items:
+
         const openHassMenuItem = new PopupIconMenuItem(
             this._("Open Home Assistant in web browser"),
             OPEN_URL_MENUITEM_ICON,
@@ -66,6 +69,16 @@ class HAEntityApplet extends IconApplet {
             }
         });
         this._applet_context_menu.addMenuItem(openHassMenuItem);
+
+        const reconnectMenuItem = new PopupIconMenuItem(
+            this._("Reconnect"),
+            RECONNECT_MENUITEM_ICON,
+            IconType.SYMBOLIC,
+        );
+        reconnectMenuItem.connect("activate", () => {
+            this._reload();
+        });
+        this._applet_context_menu.addMenuItem(reconnectMenuItem);
     }
 
     private get _onIcon(): string {
@@ -134,7 +147,7 @@ class HAEntityApplet extends IconApplet {
 
         if (this._entityController) {
             // If we had multiple connection attempts executing
-            // simultaneously, and one of them has already connected,
+            // simultaneously and one of them has already connected,
             // throw away this connection. (This can easily happen
             // when configuration is being changed.)
             entityController.close();
